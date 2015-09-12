@@ -6,6 +6,8 @@ Created on 4 Sep 2015
 import unittest
 import numpy as np, GPy
 from GPy.core.parameterization.variational import NormalPosterior
+from GPy.core.parameterization.param import Param
+from GPy.core.mapping import Mapping
 
 class Parabola(Mapping):
     def __init__(self, variance, degree=2, name='parabola'):
@@ -82,9 +84,6 @@ class Test(unittest.TestCase):
         np.testing.assert_allclose(var, var2)
 
     def test_mean_function(self):
-        from GPy.core.parameterization.param import Param
-        from GPy.core.mapping import Mapping
-        
         X = np.linspace(-2, 2, 100)[:, None]
         k = GPy.kern.RBF(1)
         k.randomize()
@@ -97,9 +96,6 @@ class Test(unittest.TestCase):
         _ = m.predict(m.X)
 
     def test_mean_function_sparse(self):
-        from GPy.core.parameterization.param import Param
-        from GPy.core.mapping import Mapping
-        
         X = np.linspace(-2, 2, 100)[:, None]
         k = GPy.kern.RBF(1)
         k.randomize()
