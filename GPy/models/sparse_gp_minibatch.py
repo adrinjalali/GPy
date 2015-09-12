@@ -58,7 +58,7 @@ class SparseGPMiniBatch(SparseGP):
         self.Z = Param('inducing inputs', Z)
         self.num_inducing = Z.shape[0]
 
-        GP.__init__(self, X, Y, kernel, likelihood, inference_method=inference_method, name=name, Y_metadata=Y_metadata, normalizer=normalizer)
+        super(SparseGPMiniBatch, self).__init__(X, Y, kernel, likelihood, inference_method=inference_method, name=name, Y_metadata=Y_metadata, normalizer=normalizer)
         self.missing_data = missing_data
 
         if stochastic and missing_data:
