@@ -7,6 +7,29 @@ import unittest
 import numpy as np, GPy
 from GPy.core.parameterization.variational import NormalPosterior
 
+class Parabola(Mapping):
+    def __init__(self, variance, degree=2, name='parabola'):
+        super(Parabola, self).__init__(1, 1, name)
+        self.variance = Param('variance', np.ones(degree+1) * variance)
+        self.degree = degree
+        self.link_parameter(self.variance)
+
+    def f(self, X):
+        p = self.variance[0] * np.ones(X.shape)
+        for i in range(1, self.degree+1):
+            p += self.variance[i] * X**(i)
+        return p
+
+    def gradients_X(self, dL_dF, X):
+        grad = np.zeros(X.shape)
+        for i in range(1, self.degree+1):
+            grad += (i) * self.variance[i] * X**(i-1)
+        return grad
+
+    def update_gradients(self, dL_dF, X):
+        for i in range(self.degree+1):
+            self.variance.gradient[i] = (dL_dF * X**(i)).sum(0)
+
 class Test(unittest.TestCase):
 
 
@@ -61,28 +84,7 @@ class Test(unittest.TestCase):
     def test_mean_function(self):
         from GPy.core.parameterization.param import Param
         from GPy.core.mapping import Mapping
-        class Parabola(Mapping):
-            def __init__(self, variance, degree=2, name='parabola'):
-                super(Parabola, self).__init__(1, 1, name)
-                self.variance = Param('variance', np.ones(degree+1) * variance)
-                self.degree = degree
-                self.link_parameter(self.variance)
-
-            def f(self, X):
-                p = self.variance[0] * np.ones(X.shape)
-                for i in range(1, self.degree+1):
-                    p += self.variance[i] * X**(i)
-                return p
-
-            def gradients_X(self, dL_dF, X):
-                grad = np.zeros(X.shape)
-                for i in range(1, self.degree+1):
-                    grad += (i) * self.variance[i] * X**(i-1)
-                return grad
-
-            def update_gradients(self, dL_dF, X):
-                for i in range(self.degree+1):
-                    self.variance.gradient[i] = (dL_dF * X**(i)).sum(0)
+        
         X = np.linspace(-2, 2, 100)[:, None]
         k = GPy.kern.RBF(1)
         k.randomize()
@@ -90,6 +92,21 @@ class Test(unittest.TestCase):
         p.randomize()
         Y = p.f(X) + np.random.multivariate_normal(np.zeros(X.shape[0]), k.K(X)+np.eye(X.shape[0])*1e-8)[:,None] + np.random.normal(0, .1, (X.shape[0], 1))
         m = GPy.models.GPRegression(X, Y, mean_function=p)
+        m.randomize()
+        assert(m.checkgrad())
+        _ = m.predict(m.X)
+
+    def test_mean_function_sparse(self):
+        from GPy.core.parameterization.param import Param
+        from GPy.core.mapping import Mapping
+        
+        X = np.linspace(-2, 2, 100)[:, None]
+        k = GPy.kern.RBF(1)
+        k.randomize()
+        p = Parabola(.3)
+        p.randomize()
+        Y = p.f(X) + np.random.multivariate_normal(np.zeros(X.shape[0]), k.K(X)+np.eye(X.shape[0])*1e-8)[:,None] + np.random.normal(0, .1, (X.shape[0], 1))
+        m = GPy.models.SparseGPRegression(X, Y, mean_function=p)
         m.randomize()
         assert(m.checkgrad())
         _ = m.predict(m.X)
