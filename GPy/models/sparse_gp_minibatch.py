@@ -58,7 +58,6 @@ class SparseGPMiniBatch(SparseGP):
         self.Z = Param('inducing inputs', Z)
         self.num_inducing = Z.shape[0]
 
-        super(SparseGPMiniBatch, self).__init__(X, Y, Z, kernel, likelihood, inference_method=inference_method, name=name, Y_metadata=Y_metadata, normalizer=normalizer)
         self.missing_data = missing_data
 
         if stochastic and missing_data:
@@ -73,9 +72,7 @@ class SparseGPMiniBatch(SparseGP):
         else:
             self.stochastics = False
 
-        #logger.info("Adding Z as parameter")
-        #self.link_parameter(self.Z, index=0)
-        self.posterior = None
+        super(SparseGPMiniBatch, self).__init__(X, Y, Z, kernel, likelihood, inference_method=inference_method, name=name, Y_metadata=Y_metadata, normalizer=normalizer)
 
     def has_uncertain_inputs(self):
         return isinstance(self.X, VariationalPosterior)
